@@ -7,7 +7,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         print("Hello world for branch sprint_4 to merge")
-
+        //sleep(3) //line for launchscreen cheak
         return true
     }
 
