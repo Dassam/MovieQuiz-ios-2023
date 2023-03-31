@@ -2,6 +2,9 @@ import UIKit
 
 final class MovieQuizViewController: UIViewController {
     
+    @IBOutlet weak var yesButton: UIButton!
+    @IBOutlet weak var noButton: UIButton!
+    
     @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var textLabel: UILabel!
     @IBOutlet private weak var counterLabel: UILabel!
@@ -113,10 +116,14 @@ final class MovieQuizViewController: UIViewController {
             imageView.layer.borderColor = UIColor.red.cgColor // делаем рамку красной
         }
         
+        buttonIsEnabledToogle()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // асинхронно на мейн потоке даем задержку в 1 секунду
             self.showNextQuestionOrResults() // загружаем следующий вопрос
             sender.isUserInteractionEnabled = true
             self.imageView.layer.borderWidth = 0 // убираем рамку
+            self.buttonIsEnabledToogle()
+            
         }
     }
     
@@ -153,6 +160,11 @@ final class MovieQuizViewController: UIViewController {
         alert.addAction(action)
         
         self.present(alert, animated: true, completion: nil)
+    }
+    
+    func buttonIsEnabledToogle() {
+        yesButton.isEnabled.toggle()
+        noButton.isEnabled.toggle()
     }
     
 }
