@@ -12,65 +12,6 @@ final class MovieQuizViewController: UIViewController {
     private var currentQuestionIndex : Int = 0 // счетчика индекса вопроса
     private var correctAnswers : Int  = 0 // счетчика правильных ответов
     
-    private let questions: [QuizQuestion] = [ // Мокап
-        QuizQuestion(
-            image: "The Godfather",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "The Dark Knight",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "Kill Bill",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "The Avengers",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "Deadpool",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "The Green Knight",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: true),
-        QuizQuestion(
-            image: "Old",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: false),
-        QuizQuestion(
-            image: "The Ice Age Adventures of Buck Wild",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: false),
-        QuizQuestion(
-            image: "Tesla",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: false),
-        QuizQuestion(
-            image: "Vivarium",
-            text: "Рейтинг этого фильма \n больше чем 6?",
-            correctAnswer: false)
-    ] // Мок модель вопросов
-    
-    struct QuizQuestion {
-        let image: String // строка с названием фильма
-        let text: String // строка с вопросом о рейтинге фильма
-        let correctAnswer: Bool // правильный ответ на вопрос
-    }// модель каждого вопрса
-    struct QuizStepViewModel {
-        let image: UIImage // картинка с афишей фильма с типом UIImage
-        let question: String // вопрос о рейтинге квиза
-        let questionNumber: String // строка с порядковым номером этого вопроса
-    } // модель для отображения вопроса на экране
-    struct QuizResultsViewModel {
-        let title: String // строка с заголовком алерта
-        let text: String // строка с текстом о количестве набранных очков
-        let buttonText: String // текст для кнопки алерта
-    } //модель для финального алерта
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         let currentQuestion = questions[currentQuestionIndex]
@@ -118,13 +59,15 @@ final class MovieQuizViewController: UIViewController {
         
         buttonIsEnabledToogle()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // асинхронно на мейн потоке даем задержку в 1 секунду
+        // асинхронно на мейн потоке даем задержку в 1 секунду
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
             self.showNextQuestionOrResults() // загружаем следующий вопрос
             sender.isUserInteractionEnabled = true
             self.imageView.layer.borderWidth = 0 // убираем рамку
             self.buttonIsEnabledToogle()
-            
         }
+        
     }
     
     private func showNextQuestionOrResults() {
@@ -149,12 +92,15 @@ final class MovieQuizViewController: UIViewController {
             message: result.text,
             preferredStyle: .alert)
         
-        let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
+        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
+            guard let self = self else { return }
+            
             self.currentQuestionIndex = 0 // сбрасываем переменную с количеством правильных ответов
             self.correctAnswers = 0 // заново показываем первый вопрос
+            
             let firstQuestion = self.questions[self.currentQuestionIndex] // загружаем данные в модель вопроса
-            let viewModel = self.convert( model: firstQuestion ) // конвертируем модель вопроса в модель для показа на экран
-            self.show( quiz: viewModel )
+            let viewModel = self.convert(model: firstQuestion)// конвертируем модель вопроса в модель для показа на экран
+            self.show(quiz: viewModel)
         }
         
         alert.addAction(action)
