@@ -12,20 +12,28 @@ final class MovieQuizViewController: UIViewController {
     private var currentQuestionIndex : Int = 0 // счетчика индекса вопроса
     private var correctAnswers : Int  = 0 // счетчика правильных ответов
     
+    private let questionsAmount: Int = 10
+    private let questionFactory: QuestionFactory = QuestionFactory()
+    private var currentQuestion: QuizQuestion?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        let currentQuestion = questions[currentQuestionIndex]
-        show (quiz : convert ( model: currentQuestion ))
+        
+        if let firstQuestion = questionFactory.requestNextQuestion() {
+            currentQuestion = firstQuestion
+            let viewModel = convert(model: firstQuestion)
+            show(quiz: viewModel)
+        }
     } // запуск экрана
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) { // нажиматие на кнопку "Да"
-        let currentQuestion = questions[currentQuestionIndex]
+        guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = true
         showAnswerResult( isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender )
         
     }
     @IBAction private func noButtonClicked(_ sender: UIButton) {  //нажиматие на кнопку "Нет"
-        let currentQuestion = questions[currentQuestionIndex]
+        guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = false
         showAnswerResult( isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender )
         
@@ -35,7 +43,7 @@ final class MovieQuizViewController: UIViewController {
         let questionStep = QuizStepViewModel (
             image : UIImage(named: model.image) ?? UIImage(), // загружаем картинку или показываем пустую UIImage
             question : model.text, // текст вопроса
-            questionNumber :  "\(currentQuestionIndex + 1)/\(questions.count)" ) // номер вопроса из заданного количества
+            questionNumber :  "\(currentQuestionIndex + 1)/\(questionsAmount)" ) // номер вопроса из заданного количества
         return questionStep
     }
     
@@ -71,18 +79,24 @@ final class MovieQuizViewController: UIViewController {
     }
     
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questions.count - 1 { // проверка что еще не дошли до последнего вопроса
+        if currentQuestionIndex == questionsAmount - 1 {
+            let text = correctAnswers == questionsAmount ?
+                       "Поздравляем, Вы ответили на 10 из 10!" :
+                       "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
+            
             let resultModel = QuizResultsViewModel(title: "Этот раунд окончен!",
-                                                   text: "Ваш результат: \(correctAnswers)/\(questions.count)",
+                                                   text: text,
                                                    buttonText: "Начать заново") // заполняем модель для алерта о конце игры
             showResult(quiz: resultModel) // вызывает алерт
         } else { // если еще не конец игры
             currentQuestionIndex += 1 // увеличиваем индекс вопроса
             
-            let nextQuestion = questions[currentQuestionIndex] // загружаем модель следующего вопроса
-            let viewModel = convert( model: nextQuestion )
-            
-            show( quiz: viewModel )
+            if let nextQuestion = questionFactory.requestNextQuestion() {
+                currentQuestion = nextQuestion
+                let viewModel = convert(model: nextQuestion)
+                
+                show(quiz: viewModel)
+            }
         }
     }
     
@@ -98,9 +112,12 @@ final class MovieQuizViewController: UIViewController {
             self.currentQuestionIndex = 0 // сбрасываем переменную с количеством правильных ответов
             self.correctAnswers = 0 // заново показываем первый вопрос
             
-            let firstQuestion = self.questions[self.currentQuestionIndex] // загружаем данные в модель вопроса
-            let viewModel = self.convert(model: firstQuestion)// конвертируем модель вопроса в модель для показа на экран
-            self.show(quiz: viewModel)
+            if let firstQuestion = self.questionFactory.requestNextQuestion() {
+                self.currentQuestion = firstQuestion
+                let viewModel = self.convert(model: firstQuestion)
+                
+                self.show(quiz: viewModel)
+            }
         }
         
         alert.addAction(action)

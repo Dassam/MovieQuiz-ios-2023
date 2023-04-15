@@ -7,7 +7,7 @@
 
 import Foundation
 
-class QuestionFactory: QuestionFactoryProtocol {
+class QuestionFactory {
     private let questions: [QuizQuestion] = [ // Мокап
         QuizQuestion(
             image: "The Godfather",
