@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     @IBOutlet weak var yesButton: UIButton!
     @IBOutlet weak var noButton: UIButton!
@@ -9,42 +9,54 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet private weak var textLabel: UILabel!
     @IBOutlet private weak var counterLabel: UILabel!
     
+   
+    private var correctAnswers : Int = 0 // счетчика правильных ответов
+    private let questionsAmount: Int = 10 // количество вопросов
     private var currentQuestionIndex : Int = 0 // счетчика индекса вопроса
-    private var correctAnswers : Int  = 0 // счетчика правильных ответов
     
-    private let questionsAmount: Int = 10
-    private let questionFactory: QuestionFactory = QuestionFactory()
     private var currentQuestion: QuizQuestion?
+    private var alertPresenter: AlertPresenter?
+    private var questionFactory: QuestionFactoryProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let firstQuestion = questionFactory.requestNextQuestion() {
-            currentQuestion = firstQuestion
-            let viewModel = convert(model: firstQuestion)
-            show(quiz: viewModel)
-        }
+        alertPresenter = AlertPresenter(delegate: self)
+        questionFactory = QuestionFactory(delegate: self)
+        
+        questionFactory?.requestNextQuestion()
     } // запуск экрана
+    
+    // MARK: - QuestionFactoryDelegate
+
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else { return }
+           
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
+        }
+    }
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) { // нажиматие на кнопку "Да"
         guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = true
-        showAnswerResult( isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender )
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
         
     }
     @IBAction private func noButtonClicked(_ sender: UIButton) {  //нажиматие на кнопку "Нет"
         guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = false
-        showAnswerResult( isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender )
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
         
     }
     
     private func convert( model: QuizQuestion ) -> QuizStepViewModel { // метод конвертации, возвращает вью модель для экрана вопроса
-        let questionStep = QuizStepViewModel (
+        return QuizStepViewModel (
             image : UIImage(named: model.image) ?? UIImage(), // загружаем картинку или показываем пустую UIImage
             question : model.text, // текст вопроса
-            questionNumber :  "\(currentQuestionIndex + 1)/\(questionsAmount)" ) // номер вопроса из заданного количества
-        return questionStep
+            questionNumber :  "\(currentQuestionIndex + 1)/\(questionsAmount)")
     }
     
     private func show( quiz step: QuizStepViewModel ) { // вывода на экран данных каждого вопроса
@@ -80,49 +92,19 @@ final class MovieQuizViewController: UIViewController {
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let text = correctAnswers == questionsAmount ?
-                       "Поздравляем, Вы ответили на 10 из 10!" :
-                       "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
-            
-            let resultModel = QuizResultsViewModel(title: "Этот раунд окончен!",
-                                                   text: text,
-                                                   buttonText: "Начать заново") // заполняем модель для алерта о конце игры
-            showResult(quiz: resultModel) // вызывает алерт
+            let resultModel = AlertModel(
+                        title: "Этот раунд окончен!",
+                        message: "Ваш результат: \(correctAnswers)/\(questionsAmount)",
+                        buttonText: "Сыграть еще раз") { [weak self] _ in
+                            guard let self = self else { return }
+                            self.correctAnswers = 0
+                            self.currentQuestionIndex = 0
+                            self.questionFactory?.requestNextQuestion() }
+            alertPresenter?.show(resultModel)
         } else { // если еще не конец игры
             currentQuestionIndex += 1 // увеличиваем индекс вопроса
-            
-            if let nextQuestion = questionFactory.requestNextQuestion() {
-                currentQuestion = nextQuestion
-                let viewModel = convert(model: nextQuestion)
-                
-                show(quiz: viewModel)
-            }
+            questionFactory?.requestNextQuestion()
         }
-    }
-    
-    private func showResult(quiz result: QuizResultsViewModel) {
-        let alert = UIAlertController(
-            title: result.title,
-            message: result.text,
-            preferredStyle: .alert)
-        
-        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            
-            self.currentQuestionIndex = 0 // сбрасываем переменную с количеством правильных ответов
-            self.correctAnswers = 0 // заново показываем первый вопрос
-            
-            if let firstQuestion = self.questionFactory.requestNextQuestion() {
-                self.currentQuestion = firstQuestion
-                let viewModel = self.convert(model: firstQuestion)
-                
-                self.show(quiz: viewModel)
-            }
-        }
-        
-        alert.addAction(action)
-        
-        self.present(alert, animated: true, completion: nil)
     }
     
     func buttonIsEnabledToogle() {
