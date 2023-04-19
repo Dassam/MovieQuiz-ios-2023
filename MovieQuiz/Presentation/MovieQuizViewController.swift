@@ -9,23 +9,23 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     @IBOutlet private weak var textLabel: UILabel!
     @IBOutlet private weak var counterLabel: UILabel!
     
-   
     private var correctAnswers : Int = 0 // счетчика правильных ответов
     private let questionsAmount: Int = 10 // количество вопросов
     private var currentQuestionIndex : Int = 0 // счетчика индекса вопроса
     
+    private var alertPresenter: AlertPresenterProtocol?
     private var currentQuestion: QuizQuestion?
-    private var alertPresenter: AlertPresenter?
+    private var statisticService: StatisticServiceProtocol?
     private var questionFactory: QuestionFactoryProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         alertPresenter = AlertPresenter(delegate: self)
+        statisticService = StatisticServiceImplementation()
         questionFactory = QuestionFactory(delegate: self)
         
         questionFactory?.requestNextQuestion()
-    } // запуск экрана
+    }
     
     // MARK: - QuestionFactoryDelegate
 
@@ -43,13 +43,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
-        
     }
     @IBAction private func noButtonClicked(_ sender: UIButton) {  //нажиматие на кнопку "Нет"
         guard let currentQuestion = currentQuestion else { return }
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
-        
     }
     
     private func convert( model: QuizQuestion ) -> QuizStepViewModel { // метод конвертации, возвращает вью модель для экрана вопроса
@@ -87,30 +85,46 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             self.imageView.layer.borderWidth = 0 // убираем рамку
             self.buttonIsEnabledToogle()
         }
-        
     }
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let resultModel = AlertModel(
-                        title: "Этот раунд окончен!",
-                        message: "Ваш результат: \(correctAnswers)/\(questionsAmount)",
-                        buttonText: "Сыграть еще раз") { [weak self] _ in
-                            guard let self = self else { return }
-                            self.correctAnswers = 0
-                            self.currentQuestionIndex = 0
-                            self.questionFactory?.requestNextQuestion() }
-            alertPresenter?.show(resultModel)
+            statisticService?.store(correct: correctAnswers, total: questionsAmount)
+            
+            let alertModel = AlertModel(
+                title: "Этот раунд окончен",
+                message: makeResultMessage(),
+                buttonText: "OK") { [weak self] _ in
+                    guard let self = self else { return }
+                    self.correctAnswers = 0
+                    self.currentQuestionIndex = 0
+                    self.questionFactory?.requestNextQuestion() }
+            alertPresenter?.showAlert(quiz: alertModel)
+            
         } else { // если еще не конец игры
             currentQuestionIndex += 1 // увеличиваем индекс вопроса
             questionFactory?.requestNextQuestion()
         }
     }
     
+    private func makeResultMessage() -> String {
+        guard let statisticService = statisticService else { return "" }
+        
+        let average = "Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
+        let bestGameInfoLine = "Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))"
+        let currentGameResult = "Ваш результат: \(correctAnswers)/\(questionsAmount)"
+        let totalGamesPlayed = "Количество сыгранных квизов: \(statisticService.gamesCount)"
+        
+        let resultMessage = [currentGameResult,
+                             totalGamesPlayed,
+                             bestGameInfoLine,
+                             average].joined(separator: "\n")
+        return resultMessage
+    }
+
     func buttonIsEnabledToogle() {
         yesButton.isEnabled.toggle()
         noButton.isEnabled.toggle()
     }
     
 }
-

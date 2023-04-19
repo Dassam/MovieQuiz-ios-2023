@@ -5,7 +5,6 @@
 //  Created by Dassam on 12.04.2023.
 //
 
-import Foundation
 import UIKit
 
 struct QuizQuestion {
