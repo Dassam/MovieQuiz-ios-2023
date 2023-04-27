@@ -152,7 +152,6 @@
 				CE8D95D129FB21C400EAE5E5 /* MoviesLoader.swift */,
 				CEE4D77729EF197D00BB6869 /* StatisticService.swift */,
 				CE7DED2529E70EED00AEDA02 /* QuestionFactory.swift */,
-				CE6E23E429EB426600BB7DF1 /* QuestionFactoryDelegate.swift */,
 				CEE4D77F29F00B4400BB6869 /* Protocols */,
 			);
 			path = Services;
@@ -176,6 +175,7 @@
 				CEE4D77929EF199700BB6869 /* AlertPresenterProtocol.swift */,
 				CEE4D77D29F00AFD00BB6869 /* StatisticServiceProtocol.swift */,
 				CE6E23E229EB293C00BB7DF1 /* QuestionFactoryProtocol.swift */,
+				CE6E23E429EB426600BB7DF1 /* QuestionFactoryDelegate.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";

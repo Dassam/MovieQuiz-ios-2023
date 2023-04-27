@@ -23,9 +23,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         super.viewDidLoad()
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
-        questionFactory = QuestionFactory(delegate: self)
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(),delegate: self)
         
-        questionFactory?.requestNextQuestion()
+        showLoadingIndicator()
+        questionFactory?.loadData()
     }
     
     private func showLoadingIndicator() {
@@ -34,8 +35,29 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     private func hideLoadingIndicator() {
-        activityIndicator.isHidden = true // говорим, что индикатор загрузки не скрыт
-        activityIndicator.stopAnimating() // включаем анимацию
+        activityIndicator.isHidden = true // говорим, что индикатор загрузки скрыт
+        activityIndicator.stopAnimating() // выключаем анимацию
+    }
+    
+    // MARK: - QuestionFactoryDelegate
+
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else { return }
+           
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
+        }
+    }
+    
+    func didLoadDataFromServer() {
+        hideLoadingIndicator() // скрываем индикатор загрузки
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription) // возьмём в качестве сообщения описание ошибки
     }
     
     private func showNetworkError(message: String) {
@@ -53,18 +75,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         // создайте и покажите алерт
     }
-    
-    // MARK: - QuestionFactoryDelegate
 
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else { return }
-           
-        currentQuestion = question
-        let viewModel = convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: viewModel)
-        }
-    }
+    
+    // MARK: - ButtonsActionHandler
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) { // нажиматие на кнопку "Да"
         guard let currentQuestion = currentQuestion else { return }
@@ -77,14 +90,22 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
     }
     
-    private func convert( model: QuizQuestion ) -> QuizStepViewModel { // метод конвертации, возвращает вью модель для экрана вопроса
+    /*private func convert( model: QuizQuestion ) -> QuizStepViewModel { // метод конвертации, возвращает вью модель для экрана вопроса
         return QuizStepViewModel (
             image : UIImage(named: model.image) ?? UIImage(), // загружаем картинку или показываем пустую UIImage
             question : model.text, // текст вопроса
             questionNumber :  "\(currentQuestionIndex + 1)/\(questionsAmount)")
+    }*/
+    
+    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+        return QuizStepViewModel(
+            image: UIImage(data: model.image) ?? UIImage(),
+            question: model.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
     }
     
-    private func show( quiz step: QuizStepViewModel ) { // вывода на экран данных каждого вопроса
+    
+    private func show(quiz step: QuizStepViewModel) { // вывода на экран данных каждого вопроса
         imageView.image = step.image // выгружаем картинку
         textLabel.text = step.question // выгружаем вопрос
         counterLabel.text = step.questionNumber // выгружаем текст вопроса
