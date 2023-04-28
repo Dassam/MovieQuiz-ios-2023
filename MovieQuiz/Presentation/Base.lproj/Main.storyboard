@@ -83,7 +83,7 @@
                                                     </userDefinedRuntimeAttribute>
                                                 </userDefinedRuntimeAttributes>
                                                 <connections>
-                                                    <action selector="noButtonClicked:" destination="BYZ-38-t0r" eventType="touchUpInside" id="kfH-Sl-fhs"/>
+                                                    <action selector="noButtonClicked" destination="BYZ-38-t0r" eventType="touchUpInside" id="fY8-19-cRz"/>
                                                 </connections>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GbT-Mb-BBX" userLabel="Yes button">
@@ -100,7 +100,7 @@
                                                     </userDefinedRuntimeAttribute>
                                                 </userDefinedRuntimeAttributes>
                                                 <connections>
-                                                    <action selector="yesButtonClicked:" destination="BYZ-38-t0r" eventType="touchUpInside" id="zs5-c2-6Bp"/>
+                                                    <action selector="yesButtonClicked" destination="BYZ-38-t0r" eventType="touchUpInside" id="RXw-D4-NIz"/>
                                                 </connections>
                                             </button>
                                         </subviews>
@@ -110,8 +110,13 @@
                                     </stackView>
                                 </subviews>
                             </stackView>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="WDD-Ai-5JE">
-                                <rect key="frame" x="197" y="438" width="20" height="20"/>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="WDD-Ai-5JE">
+                                <rect key="frame" x="187" y="428" width="40" height="40"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="40" id="f3e-ze-AhE"/>
+                                    <constraint firstAttribute="height" constant="40" id="zAM-5o-q17"/>
+                                </constraints>
+                                <color key="color" name="YP White "/>
                             </activityIndicatorView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>

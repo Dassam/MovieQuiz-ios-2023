@@ -8,7 +8,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var textLabel: UILabel!
     @IBOutlet private weak var counterLabel: UILabel!
-    @IBOutlet private var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     private var correctAnswers : Int = 0 // счетчика правильных ответов
     private let questionsAmount: Int = 10 // количество вопросов
@@ -21,22 +21,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let transfrom = CGAffineTransform.init(scaleX: 2.5, y: 2.5)
+        activityIndicator.transform = transfrom
+        
         alertPresenter = AlertPresenter(delegate: self)
         statisticService = StatisticServiceImplementation()
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(),delegate: self)
         
-        showLoadingIndicator()
+        activityIndicator.startAnimating()
         questionFactory?.loadData()
-    }
-    
-    private func showLoadingIndicator() {
-        activityIndicator.isHidden = false // говорим, что индикатор загрузки не скрыт
-        activityIndicator.startAnimating() // включаем анимацию
-    }
-    
-    private func hideLoadingIndicator() {
-        activityIndicator.isHidden = true // говорим, что индикатор загрузки скрыт
-        activityIndicator.stopAnimating() // выключаем анимацию
     }
     
     // MARK: - QuestionFactoryDelegate
@@ -52,16 +46,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     func didLoadDataFromServer() {
-        hideLoadingIndicator() // скрываем индикатор загрузки
+        activityIndicator.stopAnimating()
         questionFactory?.requestNextQuestion()
     }
     
     func didFailToLoadData(with error: Error) {
-        showNetworkError(message: error.localizedDescription) // возьмём в качестве сообщения описание ошибки
+        showNetworkError(message: error.localizedDescription)
     }
     
     private func showNetworkError(message: String) {
-        hideLoadingIndicator() // скрываем индикатор загрузки
+        activityIndicator.stopAnimating()
         
         let alertModel = AlertModel(
             title: "Ошибка",
@@ -70,32 +64,27 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
                 guard let self = self else { return }
                 self.correctAnswers = 0
                 self.currentQuestionIndex = 0
-                self.questionFactory?.requestNextQuestion() }
+                self.questionFactory?.requestNextQuestion()
+                self.questionFactory?.loadData()
+                activityIndicator.startAnimating()
+            }
         alertPresenter?.showAlert(quiz: alertModel)
-        
-        // создайте и покажите алерт
     }
 
-    
     // MARK: - ButtonsActionHandler
     
-    @IBAction private func yesButtonClicked(_ sender: UIButton) { // нажиматие на кнопку "Да"
+    @IBAction private func yesButtonClicked() { answerCheck(true) }
+    @IBAction private func noButtonClicked() { answerCheck(false) }
+    private func answerCheck(_ receivedAnswer: Bool) {
         guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = true
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
+        showAnswerResult(isCorrect: currentQuestion.correctAnswer == receivedAnswer)
     }
-    @IBAction private func noButtonClicked(_ sender: UIButton) {  //нажиматие на кнопку "Нет"
-        guard let currentQuestion = currentQuestion else { return }
-        let givenAnswer = false
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer, sender: sender)
+    private func switchButtonsState() {
+        yesButton.isEnabled.toggle()
+        noButton.isEnabled.toggle()
     }
     
-    /*private func convert( model: QuizQuestion ) -> QuizStepViewModel { // метод конвертации, возвращает вью модель для экрана вопроса
-        return QuizStepViewModel (
-            image : UIImage(named: model.image) ?? UIImage(), // загружаем картинку или показываем пустую UIImage
-            question : model.text, // текст вопроса
-            questionNumber :  "\(currentQuestionIndex + 1)/\(questionsAmount)")
-    }*/
+    // MARK: - FillingTheDataModels
     
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
         return QuizStepViewModel(
@@ -104,34 +93,33 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
     }
     
-    
     private func show(quiz step: QuizStepViewModel) { // вывода на экран данных каждого вопроса
         imageView.image = step.image // выгружаем картинку
         textLabel.text = step.question // выгружаем вопрос
         counterLabel.text = step.questionNumber // выгружаем текст вопроса
     }
     
-    private func showAnswerResult(isCorrect: Bool, sender: UIButton) { // метод красит рамку
+    private func showAnswerResult(isCorrect: Bool) { // метод красит рамку
         imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
         imageView.layer.borderWidth = 8 // толщина рамки
         imageView.layer.cornerRadius = 15 // радиус скругления углов рамки
         
-        if isCorrect { // проверка правильного вопроса
-            correctAnswers += 1 // увеличиваем индекс вопроса
-            imageView.layer.borderColor = UIColor.green.cgColor // делаем рамку зеленой
+        if isCorrect {
+            correctAnswers += 1
+            imageView.layer.borderColor = UIColor.green.cgColor
         } else {
-            imageView.layer.borderColor = UIColor.red.cgColor // делаем рамку красной
+            imageView.layer.borderColor = UIColor.red.cgColor
         }
         
-        buttonIsEnabledToogle()
+        switchButtonsState()
+        activityIndicator.startAnimating()
         
-        // асинхронно на мейн потоке даем задержку в 1 секунду
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
             self.showNextQuestionOrResults() // загружаем следующий вопрос
-            sender.isUserInteractionEnabled = true
-            self.imageView.layer.borderWidth = 0 // убираем рамку
-            self.buttonIsEnabledToogle()
+            self.imageView.layer.borderWidth = 0 
+            activityIndicator.stopAnimating()
+            self.switchButtonsState()
         }
     }
     
@@ -168,11 +156,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
                              bestGameInfoLine,
                              average].joined(separator: "\n")
         return resultMessage
-    }
-
-    func buttonIsEnabledToogle() {
-        yesButton.isEnabled.toggle()
-        noButton.isEnabled.toggle()
     }
     
 }

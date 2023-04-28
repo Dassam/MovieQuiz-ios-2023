@@ -7,8 +7,7 @@
 
 import UIKit
 
-/// Отвечает за загрузку данных по URL
-struct NetworkClient {
+struct NetworkClient { // Отвечает за загрузку данных по URL
 
     private enum NetworkError: Error {
         case codeError
@@ -31,7 +30,6 @@ struct NetworkClient {
                 return
             }
             
-            // Возвращаем данные
             guard let data = data else { return }
             handler(.success(data))
         }
