@@ -5,7 +5,7 @@ MovieQuiz is an application with quizzes about movies from the top 250 rating an
 
 ## **Ссылки**
 
-[Макет Figma](https://www.figma.com/file/l0IMG3Eys35fUrbvArtwsR/YP-Quiz?node-id=34%3A243)
+[Layout in Figma](https://www.figma.com/file/l0IMG3Eys35fUrbvArtwsR/YP-Quiz?node-id=34%3A243)
 
 [API IMDb](https://imdb-api.com/api#Top250Movies-header)
 
