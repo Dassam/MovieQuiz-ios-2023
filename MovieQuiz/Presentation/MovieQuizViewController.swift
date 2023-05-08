@@ -35,6 +35,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - QuestionFactoryDelegate
 
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
+    func didLoadDataFromServer() {
+        activityIndicator.stopAnimating()
+        questionFactory?.requestNextQuestion()
+    }
+    
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else { return }
            
@@ -45,40 +54,17 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    func didLoadDataFromServer() {
-        activityIndicator.stopAnimating()
-        questionFactory?.requestNextQuestion()
-    }
-    
-    func didFailToLoadData(with error: Error) {
-        showNetworkError(message: error.localizedDescription)
-    }
-    
-    private func showNetworkError(message: String) {
-        activityIndicator.stopAnimating()
-        
-        let alertModel = AlertModel(
-            title: "Ошибка",
-            message: message,
-            buttonText: "Попробовать еще раз") { [weak self] _ in
-                guard let self = self else { return }
-                self.correctAnswers = 0
-                self.currentQuestionIndex = 0
-                self.questionFactory?.requestNextQuestion()
-                self.questionFactory?.loadData()
-                activityIndicator.startAnimating()
-            }
-        alertPresenter?.showAlert(quiz: alertModel)
-    }
-
     // MARK: - ButtonsActionHandler
     
     @IBAction private func yesButtonClicked() { answerCheck(true) }
+    
     @IBAction private func noButtonClicked() { answerCheck(false) }
+    
     private func answerCheck(_ receivedAnswer: Bool) {
         guard let currentQuestion = currentQuestion else { return }
         showAnswerResult(isCorrect: currentQuestion.correctAnswer == receivedAnswer)
     }
+    
     private func switchButtonsState() {
         yesButton.isEnabled.toggle()
         noButton.isEnabled.toggle()
@@ -106,9 +92,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         if isCorrect {
             correctAnswers += 1
-            imageView.layer.borderColor = UIColor.green.cgColor
+            imageView.layer.borderColor = UIColor.ypGreen.cgColor
         } else {
-            imageView.layer.borderColor = UIColor.red.cgColor
+            imageView.layer.borderColor = UIColor.ypRed.cgColor
         }
         
         switchButtonsState()
@@ -141,6 +127,22 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             currentQuestionIndex += 1 // увеличиваем индекс вопроса
             questionFactory?.requestNextQuestion()
         }
+    }
+    
+    private func showNetworkError(message: String) {
+        activityIndicator.stopAnimating()
+        
+        let alertModel = AlertModel(
+            title: "Ошибка",
+            message: message,
+            buttonText: "Попробовать еще раз") { [weak self] _ in
+                guard let self = self else { return }
+                self.correctAnswers = 0
+                self.currentQuestionIndex = 0
+                self.questionFactory?.loadData()
+                activityIndicator.startAnimating()
+            }
+        alertPresenter?.showAlert(quiz: alertModel)
     }
     
     private func makeResultMessage() -> String {

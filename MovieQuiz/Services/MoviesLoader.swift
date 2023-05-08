@@ -8,6 +8,10 @@ import UIKit
 
 struct MoviesLoader: MoviesLoadingProtocol {
     
+    enum NetworkError: Error {
+        case emptyDataFromServerError(String)
+    }
+    
     // MARK: - NetworkClient
     private let networkClient = NetworkClient()
     
@@ -25,7 +29,11 @@ struct MoviesLoader: MoviesLoadingProtocol {
             case .success(let data):
                 do {
                     let mostPopularMovies = try JSONDecoder().decode(MostPopularMovies.self, from: data)
-                    handler(.success(mostPopularMovies))
+                    if !mostPopularMovies.errorMessage.isEmpty {
+                        handler(.failure(NetworkError.emptyDataFromServerError(mostPopularMovies.errorMessage)))
+                    } else {
+                        handler(.success(mostPopularMovies))
+                    }
                 } catch {
                     handler(.failure(error))
                 }
