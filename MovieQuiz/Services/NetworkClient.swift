@@ -7,7 +7,7 @@
 
 import UIKit
 
-struct NetworkClient { // Отвечает за загрузку данных по URL
+struct NetworkClient: NetworkRoutingProtocol { // Отвечает за загрузку данных по URL
 
     private enum NetworkError: Error {
         case codeError
@@ -32,7 +32,6 @@ struct NetworkClient { // Отвечает за загрузку данных п
             }
             
             guard let data = data else { return }
-            
             handler(.success(data))
         }
         
