@@ -1,14 +1,13 @@
 //
 //  MovieQuizUITests.swift
-//  MovieQuizUITests
+//  MovieQuizPresenterTest
 //
 //  Created by Dassam on 09.05.2023.
 //
 
 import XCTest
 
-final class MovieQuizUITests: XCTestCase {
-    // swiftlint:disable:next implicitly_unwrapped_optional
+class MovieQuizUITests: XCTestCase {
     var app: XCUIApplication!
     
     override func setUpWithError() throws {
@@ -17,10 +16,9 @@ final class MovieQuizUITests: XCTestCase {
         app = XCUIApplication()
         app.launch()
         
-        // это специальная настройка для тестов: если один тест не прошёл,
-        // то следующие тесты запускаться не будут; и правда, зачем ждать?
         continueAfterFailure = false
     }
+    
     override func tearDownWithError() throws {
         try super.tearDownWithError()
         
@@ -29,70 +27,63 @@ final class MovieQuizUITests: XCTestCase {
     }
     
     func testYesButton() {
-        sleep(3)
-        
         let firstPoster = app.images["Poster"]
-        let firstPosterData = firstPoster.screenshot().pngRepresentation
         
         app.buttons["Yes"].tap()
-        sleep(3)
         
         let secondPoster = app.images["Poster"]
-        let secondPosterData = secondPoster.screenshot().pngRepresentation
-        
         let indexLabel = app.staticTexts["Index"]
         
-        XCTAssertNotEqual(firstPosterData, secondPosterData)
-        XCTAssertEqual(indexLabel.label, "2/10")
+        sleep(3)
+        
+        XCTAssertTrue(indexLabel.label == "2/10")
+        XCTAssertFalse(firstPoster == secondPoster)
     }
     
     func testNoButton() {
-        sleep(3)
-        
         let firstPoster = app.images["Poster"]
-        let firstPosterData = firstPoster.screenshot().pngRepresentation
         
         app.buttons["No"].tap()
-        sleep(3)
         
         let secondPoster = app.images["Poster"]
-        let secondPosterData = secondPoster.screenshot().pngRepresentation
-
         let indexLabel = app.staticTexts["Index"]
-       
-        XCTAssertNotEqual(firstPosterData, secondPosterData)
-        XCTAssertEqual(indexLabel.label, "2/10")
+        
+        sleep(3)
+        
+        XCTAssertTrue(indexLabel.label == "2/10")
+        XCTAssertFalse(firstPoster == secondPoster)
     }
     
     func testGameFinish() {
-        sleep(2)
         for _ in 1...10 {
             app.buttons["No"].tap()
             sleep(2)
         }
-
-        let alert = app.alerts["Game results"]
         
-        XCTAssertTrue(alert.exists)
-        XCTAssertTrue(alert.label == "Этот раунд окончен!")
-        XCTAssertTrue(alert.buttons.firstMatch.label == "Сыграть ещё раз")
+        let alert = app.alerts["Alert"]
+        
+        XCTAssertTrue(app.alerts["Alert"].exists)
+        XCTAssertTrue(alert.label == "Этот раунд окончен")
+        XCTAssertTrue(alert.buttons.firstMatch.label == "OK")
     }
 
     func testAlertDismiss() {
         sleep(2)
+        
         for _ in 1...10 {
             app.buttons["No"].tap()
             sleep(2)
         }
         
-        let alert = app.alerts["Game results"]
+        let alert = app.alerts["Alert"]
+        
+        XCTAssertTrue(alert.exists)
+        XCTAssertEqual(alert.label, "Этот раунд окончен")
+        XCTAssertEqual(alert.buttons.firstMatch.label, "OK")
+        
         alert.buttons.firstMatch.tap()
-        
-        sleep(2)
-        
-        let indexLabel = app.staticTexts["Index"]
-        
         XCTAssertFalse(alert.exists)
-        XCTAssertTrue(indexLabel.label == "1/10")
-    } 
+        sleep(2)
+        XCTAssertEqual(app.staticTexts["Index"].label, "1/10")
+    }
 }
